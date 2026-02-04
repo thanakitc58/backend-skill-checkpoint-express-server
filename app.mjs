@@ -8,6 +8,7 @@ import answerApi, { questionAnswersRouter } from "./routes/answerApi.mjs";
 const app = express();
 const port = process.env.PORT || 4000;
 
+app.disable("x-powered-by");
 app.use(cors());
 app.use(express.json());
 
