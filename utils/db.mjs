@@ -1,10 +1,11 @@
 // Create PostgreSQL Connection Pool here !
+import "dotenv/config";
 import * as pg from "pg";
+
 const { Pool } = pg.default;
 
 const connectionPool = new Pool({
-  connectionString:
-    "postgresql://postgres:1234@localhost:5432/Backend-Checkpoint-Quora",
-});
+  connectionString: process.env.CONNECTION_STRING,
+})
 
 export default connectionPool;
