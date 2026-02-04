@@ -1,6 +1,5 @@
 import "dotenv/config";
 import express from "express";
-import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./swagger.config.mjs";
 import questionApi from "./routes/questionApi.mjs";
 import answerApi, { questionAnswersRouter } from "./routes/answerApi.mjs";
@@ -10,8 +9,34 @@ const port = process.env.PORT || 4000;
 
 app.use(express.json());
 
-// Swagger API Documentation
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Swagger API Documentation (ใช้ CDN - รองรับทั้ง local และ Vercel)
+const swaggerHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css" />
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+  <script>
+    SwaggerUIBundle({
+      url: "/api-docs.json",
+      dom_id: "#swagger-ui",
+      presets: [
+        SwaggerUIBundle.presets.apis,
+        SwaggerUIBundle.SwaggerUIStandalonePreset
+      ],
+    });
+  </script>
+</body>
+</html>
+`;
+
+app.get("/api-docs", (req, res) => {
+  res.setHeader("Content-Type", "text/html");
+  res.send(swaggerHtml);
+});
 app.get("/api-docs.json", (req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(swaggerSpec);
