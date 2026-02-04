@@ -1,5 +1,8 @@
 import express from "express";
 import connectionPool from "../utils/db.mjs";
+import { validateCreateAnswer } from "../middleware/validateAnswer.mjs";
+import { validateVote } from "../middleware/validateVote.mjs";
+import { validateQuestionId, validateAnswerId } from "../middleware/validateParams.mjs";
 
 const router = express.Router();
 
@@ -7,18 +10,10 @@ const router = express.Router();
 const questionAnswersRouter = express.Router();
 
 //ผู้ใช้งานสามารถสร้างคำตอบของคำถามนั้นได้ (ไม่เกิน 300 ตัวอักษร)
-questionAnswersRouter.post("/:questionId/answers", async (req, res) => {
-  const { questionId } = req.params;
-  const { content } = req.body;
-  if (!content || typeof content !== "string") {
-    return res.status(400).json({ message: "Invalid request data." });
-  }
-  if (content.length > 300) {
-    return res.status(400).json({
-      message: "Answer content must not exceed 300 characters.",
-    });
-  }
-  try {
+questionAnswersRouter.post( "/:questionId/answers",validateQuestionId,validateCreateAnswer,async (req, res) => {
+    const { questionId } = req.params;
+    const { content } = req.body;
+    try {
     const questionCheck = await connectionPool.query(
       "SELECT id FROM questions WHERE id = $1",
       [questionId]
@@ -37,12 +32,13 @@ questionAnswersRouter.post("/:questionId/answers", async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Unable to create answer." });
   }
-});
+  }
+);
 
 //ผู้ใช้งานสามารถที่จะดูคำตอบของคำถามแต่ละอันได้
-questionAnswersRouter.get("/:questionId/answers", async (req, res) => {
-  const { questionId } = req.params;
-  try {
+questionAnswersRouter.get("/:questionId/answers",validateQuestionId,  async (req, res) => {
+    const { questionId } = req.params;
+    try {
     const questionCheck = await connectionPool.query(
       "SELECT id FROM questions WHERE id = $1",
       [questionId]
@@ -58,12 +54,13 @@ questionAnswersRouter.get("/:questionId/answers", async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Unable to fetch answers." });
   }
-});
+  }
+);
 
 //ผู้ใช้งานสามารถที่จะลบคำตอบของคำถามได้
-questionAnswersRouter.delete("/:questionId/answers", async (req, res) => {
-  const { questionId } = req.params;
-  try {
+questionAnswersRouter.delete( "/:questionId/answers",validateQuestionId, async (req, res) => {
+    const { questionId } = req.params;
+    try {
     const questionCheck = await connectionPool.query(
       "SELECT id FROM questions WHERE id = $1",
       [questionId]
@@ -80,17 +77,15 @@ questionAnswersRouter.delete("/:questionId/answers", async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Unable to delete answers." });
   }
-});
+  }
+);
 
 // Router สำหรับ vote ที่ nested ภายใต้ /answers
 //ผู้ใช้งานสามารถโหวตคำตอบได้
-router.post("/:answerId/vote", async (req, res) => {
-  const { answerId } = req.params;
-  const { vote } = req.body;
-  if (vote !== 1 && vote !== -1) {
-    return res.status(400).json({ message: "Invalid vote value." });
-  }
-  try {
+router.post( "/:answerId/vote",validateAnswerId,validateVote,async (req, res) => {
+    const { answerId } = req.params;
+    const { vote } = req.body;
+    try {
     const answerCheck = await connectionPool.query(
       "SELECT id FROM answers WHERE id = $1",
       [answerId]
@@ -108,7 +103,8 @@ router.post("/:answerId/vote", async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Unable to vote answer." });
   }
-});
+  }
+);
 
 export default router;
 export { questionAnswersRouter };

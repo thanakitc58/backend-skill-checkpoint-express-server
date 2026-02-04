@@ -1,10 +1,13 @@
 import express from "express";
 import connectionPool from "../utils/db.mjs";
+import { validateCreateQuestion,validateUpdateQuestion,validateSearchParams,} from "../middleware/validateQuestion.mjs";
+import { validateVote } from "../middleware/validateVote.mjs";
+import { validateId, validateQuestionId } from "../middleware/validateParams.mjs";
 
 const router = express.Router();
 
 //ผู้ใช้งานสามารถสร้างคำถามได้
-router.post('/', async (req, res) => {
+router.post("/", validateCreateQuestion, async (req, res) => {
   const { title, description, category } = req.body;
   try {
       const query = 'INSERT INTO questions (title, description, category) VALUES ($1, $2, $3) RETURNING *';
@@ -27,13 +30,8 @@ router.get('/', async (req, res) => {
 });
 
 //ผู้ใช้งานสามารถที่จะค้นหาคำถามจากหัวข้อ หรือหมวดหมู่ได้
-router.get('/search', async (req, res) => {
+router.get("/search", validateSearchParams, async (req, res) => {
   const { title, category } = req.query;
-
-  if (!title && !category) {
-    return res.status(400).json({ message: "Invalid search parameters." });
-  }
-
   try {
     let query = "SELECT id, title, description, category FROM questions WHERE 1=1";
     const values = [];
@@ -58,7 +56,7 @@ router.get('/search', async (req, res) => {
 
 
 //ผู้ใช้งานสามารถดูคำถามเฉพาะได้
-router.get('/:id', async (req, res) => {
+router.get("/:id", validateId, async (req, res) => {
   const { id } = req.params;
   try{
     const result = await connectionPool.query("SELECT * FROM questions WHERE id = $1", [id]);
@@ -72,7 +70,7 @@ router.get('/:id', async (req, res) => {
 });
 
 //ผู้ใช้งานสามารถแก้ไขคำถามได้
-router.put('/:id', async (req, res) => {
+router.put("/:id", validateId, validateUpdateQuestion, async (req, res) => {
   const { id } = req.params;
   const { title, description, category } = req.body;
   try {
@@ -90,7 +88,7 @@ router.put('/:id', async (req, res) => {
 });
 
 //ผู้ใช้งานสามารถลบคำถามได้ (คำตอบและ votes ถูกลบตาม)
-router.delete('/:id', async (req, res) => {
+router.delete("/:id", validateId, async (req, res) => {
   const { id } = req.params;
   const client = await connectionPool.connect();
   try {
@@ -123,15 +121,12 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Router สำหรับ vote ที่ nested ภายใต้ /question 
-//ผู้ใช้งานสามารถโหวตคำถามได้ 
-router.post('/:questionId/vote', async (req, res) => {
-  const { questionId } = req.params;
-  const { vote } = req.body;
-  if (vote !== 1 && vote !== -1) {
-    return res.status(400).json({ message: "Invalid vote value." });
-  }
-  try {
+// Router สำหรับ vote ที่ nested ภายใต้ /question
+//ผู้ใช้งานสามารถโหวตคำถามได้
+router.post( "/:questionId/vote",validateQuestionId,validateVote, async (req, res) => {
+    const { questionId } = req.params;
+    const { vote } = req.body;
+    try {
     const questionCheck = await connectionPool.query(
       "SELECT id FROM questions WHERE id = $1",
       [questionId]
