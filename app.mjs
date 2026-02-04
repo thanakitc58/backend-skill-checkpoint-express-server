@@ -40,8 +40,19 @@ app.get("/api-docs", (req, res) => {
   res.send(swaggerHtml);
 });
 app.get("/api-docs.json", (req, res) => {
+  const protocol = req.headers["x-forwarded-proto"] || (req.secure ? "https" : "http");
+  const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:4000";
+  const baseUrl = `${protocol}://${host}`;
+  const spec = {
+    ...swaggerSpec,
+    servers: [
+      { url: baseUrl, description: "Current server" },
+      { url: "http://localhost:4000", description: "Local development" },
+    ],
+  };
   res.setHeader("Content-Type", "application/json");
-  res.send(swaggerSpec);
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.send(spec);
 });
 
 app.use("/questions", questionApi);
