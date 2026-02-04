@@ -1,9 +1,5 @@
 import swaggerJsdoc from "swagger-jsdoc";
 
-const baseUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : `http://localhost:${process.env.PORT || 4000}`;
-
 const options = {
   definition: {
     openapi: "3.0.0",
@@ -13,8 +9,7 @@ const options = {
       description: "RESTful API for question-and-answer platform with voting system",
     },
     servers: [
-      { url: "http://localhost:4000", description: "Local development" },
-      { url: baseUrl, description: process.env.VERCEL ? "Vercel" : "Current" },
+      { url: "http://localhost:4000", description: "Local (default)" },
     ],
     components: {
       schemas: {
