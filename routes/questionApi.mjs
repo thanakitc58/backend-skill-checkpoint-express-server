@@ -56,6 +56,7 @@ router.get('/search', async (req, res) => {
   }
 });
 
+
 //ผู้ใช้งานสามารถดูคำถามเฉพาะได้
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
@@ -88,22 +89,67 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-//ผู้ใช้งานสามารถลบคำถามได้
+//ผู้ใช้งานสามารถลบคำถามได้ (คำตอบและ votes ถูกลบตาม)
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
+  const client = await connectionPool.connect();
   try {
-      const result = await connectionPool.query('DELETE FROM questions WHERE id = $1 RETURNING *', [id]);
-      if (result.rows.length === 0) {
-          return res.status(404).json({ "message": "Question not found." });
-      }
-      res.status(200).json({ "message": "Question post has been deleted successfully." });
+    const questionCheck = await client.query(
+      "SELECT id FROM questions WHERE id = $1",
+      [id]
+    );
+    if (questionCheck.rows.length === 0) {
+      return res.status(404).json({ message: "Question not found." });
+    }
+    await client.query("BEGIN");
+    await client.query(
+      "DELETE FROM answer_votes WHERE answer_id IN (SELECT id FROM answers WHERE question_id = $1)",
+      [id]
+    );
+    await client.query("DELETE FROM answers WHERE question_id = $1", [id]);
+    await client.query("DELETE FROM question_votes WHERE question_id = $1", [
+      id,
+    ]);
+    await client.query("DELETE FROM questions WHERE id = $1", [id]);
+    await client.query("COMMIT");
+    res.status(200).json({
+      message: "Question post has been deleted successfully.",
+    });
   } catch (err) {
-      res.status(500).json({ "message": "Unable to delete question." });
+    await client.query("ROLLBACK");
+    res.status(500).json({ message: "Unable to delete question." });
+  } finally {
+    client.release();
   }
 });
 
-
-
+// Router สำหรับ vote ที่ nested ภายใต้ /question 
+//ผู้ใช้งานสามารถโหวตคำถามได้ 
+router.post('/:questionId/vote', async (req, res) => {
+  const { questionId } = req.params;
+  const { vote } = req.body;
+  if (vote !== 1 && vote !== -1) {
+    return res.status(400).json({ message: "Invalid vote value." });
+  }
+  try {
+    const questionCheck = await connectionPool.query(
+      "SELECT id FROM questions WHERE id = $1",
+      [questionId]
+    );
+    if (questionCheck.rows.length === 0) {
+      return res.status(404).json({ message: "Question not found." });
+    }
+    await connectionPool.query(
+      "INSERT INTO question_votes (question_id, vote) VALUES ($1, $2)",
+      [questionId, vote]
+    );
+    res
+      .status(200)
+      .json({ message: "Vote on the question has been recorded successfully." });
+  } catch (err) {
+    res.status(500).json({ message: "Unable to vote question." });
+  }
+});
 
 
 export default router;
