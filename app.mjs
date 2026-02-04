@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import cors from "cors";
 import { swaggerSpec } from "./swagger.config.mjs";
 import questionApi from "./routes/questionApi.mjs";
 import answerApi, { questionAnswersRouter } from "./routes/answerApi.mjs";
@@ -7,6 +8,7 @@ import answerApi, { questionAnswersRouter } from "./routes/answerApi.mjs";
 const app = express();
 const port = process.env.PORT || 4000;
 
+app.use(cors());
 app.use(express.json());
 
 // Swagger API Documentation (ใช้ CDN - รองรับทั้ง local และ Vercel)
