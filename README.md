@@ -134,12 +134,12 @@ http://localhost:4000
 
 ```http
 POST http://localhost:4000/questions
-Content-Type: application/json
+
 
 {
-  "title": "เมืองหลวงของฝรั่งเศสคืออะไร?",
-  "description": "คำถามภูมิศาสตร์เกี่ยวกับเมืองหลวงในยุโรป",
-  "category": "ภูมิศาสตร์"
+  "title": "What is the capital of France?",
+  "description": "A geography question about European capitals.",
+  "category": "Geography"
 }
 ```
 
@@ -147,10 +147,10 @@ Content-Type: application/json
 
 ```http
 POST http://localhost:4000/questions/1/answers
-Content-Type: application/json
+
 
 {
-  "content": "เมืองหลวงของฝรั่งเศสคือปารีส"
+  "content": "The capital of France is Paris."
 }
 ```
 
@@ -158,7 +158,6 @@ Content-Type: application/json
 
 ```http
 POST http://localhost:4000/questions/1/vote
-Content-Type: application/json
 
 {
   "vote": 1
@@ -168,7 +167,7 @@ Content-Type: application/json
 **ค้นหาคำถาม**
 
 ```http
-GET http://localhost:4000/questions/search?category=ภูมิศาสตร์
+GET http://localhost:4000/questions/search?category=Geography
 ```
 
 ---
